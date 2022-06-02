@@ -28,7 +28,7 @@
 #'   simple feature. Here $x$ is the rightmost (or leftmost, if `left == TRUE`) argument for
 #'   which the function was observed.
 #' * `feature` :: `character()` \cr
-#'   One of `"mean"`, `"max"`,`"min"`,`"slope"`,`"median"`.
+#'   One of `"mean"`, `"max"`,`"min"`,`"slope"`,`"median"`,`"var"`.
 #'   The feature that is extracted.
 #' * `left` :: `logical()` \cr
 #'   Whether to construct the window on the "left" (TRUE) or the "right" (FALSE) side.
@@ -51,7 +51,7 @@ PipeOpFFS = R6Class("PipeOpFFS",
         drop = p_lgl(default = FALSE, tags = c("train", "predict")),
         window = p_uty(tags = c("train", "predict"), custom_check = check_window),
         feature = p_fct(
-          levels = c("mean", "max", "min", "slope", "median"),
+          levels = c("mean", "max", "min", "slope", "median", "var"),
           tags = c("train", "predict", "required")
         ),
         left = p_lgl(default = FALSE, tags = c("train", "predict"))
@@ -96,7 +96,8 @@ PipeOpFFS = R6Class("PipeOpFFS",
         median = fmedian,
         min = fmin,
         max = fmax,
-        slope = fslope
+        slope = fslope, 
+        var = fvar
       )
 
       features = map(
@@ -157,11 +158,12 @@ make_fextractor = function(f) {
   }
 }
 
-fmean = make_fextractor(function(arg, value) mean(value))
-fmax = make_fextractor(function(arg, value) max(value))
-fmin = make_fextractor(function(arg, value) min(value))
-fmedian = make_fextractor(function(arg, value) median(value))
+fmean = make_fextractor(function(arg, value) mean(value, na.rm = T))
+fmax = make_fextractor(function(arg, value) max(value, na.rm = T))
+fmin = make_fextractor(function(arg, value) min(value, na.rm = T))
+fmedian = make_fextractor(function(arg, value) median(value, na.rm = T))
 fslope = make_fextractor(function(arg, value) coefficients(lm(value ~ arg))[[2L]])
+fvar = make_fextractor(function(arg, value) var(value, na.rm = T))
 
 check_window = function(x) {
   if (test_numeric(x, len = 1, lower = 0, null.ok = FALSE)) {
